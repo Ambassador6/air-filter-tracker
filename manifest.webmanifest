@@ -1,0 +1,24 @@
+{
+  "name": "Broader Ideas Air Filter Tracker",
+  "short_name": "Air Filter Tracker",
+  "description": "Track air filter changes, maintenance, contractors, costs and payment methods by property and unit.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#48208f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

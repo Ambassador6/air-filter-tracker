@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#48208f">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Air Filter Tracker</title>
+<style>
+:root{--purple:#48208f;--gold:#c99a22;--ink:#24212b;--muted:#6f6a78;--bg:#f5f3f8;--card:#fff;--danger:#b3261e;--ok:#216e39}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#35136e,#5d2bb0);color:white;padding:18px 16px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px #0002}
+.head{display:flex;align-items:center;gap:12px}.head img{width:54px;height:54px;border-radius:14px;background:white}.head h1{font-size:21px;margin:0}.head p{margin:3px 0 0;opacity:.82;font-size:12px}
+main{max-width:760px;margin:auto;padding:16px 14px 92px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:var(--card);border-radius:16px;padding:15px;box-shadow:0 2px 12px #0000000d;margin-bottom:12px}
+.stat{font-size:28px;font-weight:800;color:var(--purple)}.label{font-size:12px;color:var(--muted)}
+button,.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:700;font-size:14px;cursor:pointer}.primary{background:var(--purple);color:#fff}.gold{background:#f2e6c3;color:#4b3600}.ghost{background:#eeeaf4;color:var(--purple)}.danger{background:#fde8e7;color:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.muted{color:var(--muted)}.small{font-size:12px}
+input,select{width:100%;padding:12px;border:1px solid #d8d3df;border-radius:11px;background:#fff;font:inherit}label{display:block;font-size:12px;font-weight:700;margin:10px 0 5px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd7e4;display:flex;justify-content:center;z-index:10}nav .navin{max-width:760px;width:100%;display:grid;grid-template-columns:repeat(4,1fr)}nav button{border-radius:0;background:white;color:#6a6470;padding:10px 4px;font-size:11px}nav button.active{color:var(--purple);font-weight:800}
+.section{display:none}.section.active{display:block}.item{border:1px solid #e1dce6;border-radius:13px;padding:12px;margin:8px 0;background:#fff}.badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:800;background:#eeeaf4;color:var(--purple)}.overdue{background:#fde8e7;color:var(--danger)}.due{background:#fff1c7;color:#765600}
+dialog{border:0;border-radius:18px;padding:0;width:min(720px,94vw);box-shadow:0 20px 70px #0004}dialog::backdrop{background:#0007}.modal{padding:18px}.modal h2{margin:0 0 10px}.close{float:right;background:#eeeaf4}.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><div class="head"><img src="icons/icon-192.png"><div><h1>Air Filter Tracker</h1><p>Broader Ideas Inc. • Property Maintenance</p></div></div></header>
+
+<main>
+<section id="dashboard" class="section active">
+  <div class="grid">
+    <div class="card"><div class="stat" id="unitCount">0</div><div class="label">UNITS</div></div>
+    <div class="card"><div class="stat" id="filterCount">0</div><div class="label">FILTER RECORDS</div></div>
+    <div class="card"><div class="stat" id="dueCount">0</div><div class="label">DUE / OVERDUE</div></div>
+    <div class="card"><div class="stat" id="maintCount">0</div><div class="label">MAINTENANCE</div></div>
+  </div>
+  <div class="card"><div class="row"><h3>Quick Actions</h3></div><div class="actions">
+    <button class="primary" onclick="openFilter()">+ Filter Change</button>
+    <button class="gold" onclick="openMaintenance()">+ Maintenance</button>
+    <button class="ghost" onclick="showTab('units')">Manage Units</button>
+  </div></div>
+  <div class="card"><div class="row"><h3>Filters Due</h3><span class="small muted">90-day default</span></div><div id="dueList"></div></div>
+  <div class="card"><div class="row"><h3>Recent Activity</h3><button class="ghost small" onclick="showTab('history')">View all</button></div><div id="recentList"></div></div>
+</section>
+
+<section id="units" class="section">
+  <div class="card"><div class="row"><h2>Properties & Units</h2><button class="primary" onclick="openUnit()">+ Add Unit</button></div><div id="unitList"></div></div>
+</section>
+
+<section id="history" class="section">
+  <div class="card"><div class="row"><h2>Filter History</h2><button class="primary" onclick="openFilter()">+ Add</button></div><div id="historyList"></div></div>
+</section>
+
+<section id="maintenance" class="section">
+  <div class="card"><div class="row"><h2>Maintenance</h2><button class="primary" onclick="openMaintenance()">+ Add</button></div><div id="maintenanceList"></div></div>
+</section>
+</main>
+
+<nav><div class="navin">
+<button onclick="showTab('dashboard')" data-tab="dashboard">⌂<br>Home</button>
+<button onclick="showTab('units')" data-tab="units">▦<br>Units</button>
+<button onclick="showTab('history')" data-tab="history">✓<br>Filters</button>
+<button onclick="showTab('maintenance')" data-tab="maintenance">🔧<br>Maintenance</button>
+</div></nav>
+
+<dialog id="unitDlg"><div class="modal"><button class="close" onclick="unitDlg.close()">✕</button><h2>Add Unit</h2>
+<form id="unitForm" onsubmit="saveUnit(event)"><label>Property / Apartment Name<input id="property" required placeholder="Example: 1200 Main Street"></label>
+<label>Unit Number<input id="unit" required placeholder="Example: 204"></label><label>Filter Size<input id="defaultSize" placeholder="Example: 16x20x1"></label>
+<div class="actions"><button class="primary">Save Unit</button><button type="button" class="ghost" onclick="unitDlg.close()">Cancel</button></div></form></div></dialog>
+
+<dialog id="filterDlg"><div class="modal"><button class="close" onclick="filterDlg.close()">✕</button><h2>Record Filter Change</h2>
+<form id="filterForm" onsubmit="saveFilter(event)"><div class="formgrid"><div><label>Property / Unit<select id="filterUnit" required></select></label></div><div><label>Date Changed<input id="filterDate" type="date" required></label></div>
+<div><label>Filter Size<input id="filterSize" required placeholder="16x20x1"></label></div><div><label>Next Change<input id="nextDate" type="date"></label></div><div class="full"><label>Performed By<input id="performedBy" placeholder="Name"></label></div></div>
+<div class="actions"><button class="primary">Save Filter Change</button><button type="button" class="ghost" onclick="filterDlg.close()">Cancel</button></div></form></div></dialog>
+
+<dialog id="maintDlg"><div class="modal"><button class="close" onclick="maintDlg.close()">✕</button><h2>Maintenance Record</h2>
+<form id="maintForm" onsubmit="saveMaintenance(event)"><div class="formgrid"><div><label>Property / Unit<select id="maintUnit" required></select></label></div><div><label>Date<input id="maintDate" type="date" required></label></div>
+<div class="full"><label>Work / Project Description<input id="project" required placeholder="Example: HVAC repair"></label></div>
+<div><label>Contractor<input id="contractor" placeholder="Contractor name"></label></div><div><label>Project Cost ($)<input id="cost" type="number" min="0" step="0.01" placeholder="0.00"></label></div>
+<div><label>Payment Method<select id="payment"><option>Check</option><option>Cash</option><option>Cash App</option></select></label></div></div>
+<div class="actions"><button class="primary">Save Maintenance</button><button type="button" class="ghost" onclick="maintDlg.close()">Cancel</button></div></form></div></dialog>
+
+<script>
+const KEY="airFilterTracker.v1";
+let db=JSON.parse(localStorage.getItem(KEY)||'{"units":[],"filters":[],"maintenance":[]}');
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+function save(){localStorage.setItem(KEY,JSON.stringify(db)); render();}
+function unitName(id){const u=db.units.find(x=>x.id===id);return u?`${u.property} — Unit ${u.unit}`:"Unknown unit"}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function daysUntil(d){return Math.ceil((new Date(d)-new Date(today()))/86400000)}
+function showTab(id){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));render()}
+function openUnit(){$('unitForm').reset();unitDlg.showModal()}
+function openFilter(){if(!db.units.length){alert("Add a unit first.");showTab("units");return}fillUnitSelects();$('filterForm').reset();$('filterDate').value=today();$('nextDate').value=addDays(today(),90);filterDlg.showModal()}
+function openMaintenance(){if(!db.units.length){alert("Add a unit first.");showTab("units");return}fillUnitSelects();$('maintForm').reset();$('maintDate').value=today();maintDlg.showModal()}
+function addDays(d,n){let x=new Date(d);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
+function fillUnitSelects(){for(const id of ["filterUnit","maintUnit"]){const el=$(id);el.innerHTML=db.units.map(u=>`<option value="${u.id}">${esc(u.property)} — Unit ${esc(u.unit)}</option>`).join("")}}
+function saveUnit(e){e.preventDefault();db.units.push({id:crypto.randomUUID(),property:$('property').value.trim(),unit:$('unit').value.trim(),size:$('defaultSize').value.trim()});unitDlg.close();save()}
+function saveFilter(e){e.preventDefault();db.filters.push({id:crypto.randomUUID(),unitId:$('filterUnit').value,date:$('filterDate').value,size:$('filterSize').value.trim(),nextDate:$('nextDate').value,performedBy:$('performedBy').value.trim(),created:Date.now()});filterDlg.close();save()}
+function saveMaintenance(e){e.preventDefault();db.maintenance.push({id:crypto.randomUUID(),unitId:$('maintUnit').value,date:$('maintDate').value,project:$('project').value.trim(),contractor:$('contractor').value.trim(),cost:Number($('cost').value||0),payment:$('payment').value,created:Date.now()});maintDlg.close();save()}
+function del(type,id){if(!confirm("Delete this record?"))return;db[type]=db[type].filter(x=>x.id!==id);save()}
+function render(){
+ $('unitCount').textContent=db.units.length;
+ $('filterCount').textContent=db.filters.length;
+ $('maintCount').textContent=db.maintenance.length;
+ const due=db.filters.filter(f=>f.nextDate&&daysUntil(f.nextDate)<=14);
+ $('dueCount').textContent=due.length;
+ $('dueList').innerHTML=due.length?due.sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).map(f=>{let n=daysUntil(f.nextDate);let cls=n<0?'overdue':'due';return `<div class="item"><div class="row"><b>${esc(unitName(f.unitId))}</b><span class="badge ${cls}">${n<0?`${Math.abs(n)} days overdue`:n===0?'Due today':`Due in ${n} days`}</span></div><div class="small muted">${esc(f.size)} • next change ${f.nextDate}</div></div>`}).join(""):`<div class="empty">No filters due within the next 14 days.</div>`;
+ const all=[...db.filters.map(x=>({...x,type:"filter",ts:x.created||0})),...db.maintenance.map(x=>({...x,type:"maintenance",ts:x.created||0}))].sort((a,b)=>b.ts-a.ts).slice(0,6);
+ $('recentList').innerHTML=all.length?all.map(x=>`<div class="item"><b>${x.type==="filter"?"Filter changed":"Maintenance"}</b><div>${esc(unitName(x.unitId))}</div><div class="small muted">${x.date}</div></div>`).join(""):`<div class="empty">No activity yet.</div>`;
+ $('unitList').innerHTML=db.units.length?db.units.map(u=>{let f=db.filters.filter(x=>x.unitId===u.id).sort((a,b)=>b.date.localeCompare(a.date))[0];return `<div class="item"><div class="row"><b>${esc(u.property)} — Unit ${esc(u.unit)}</b><button class="danger small" onclick="del('units','${u.id}')">Delete</button></div><div class="small muted">Default filter: ${esc(u.size||"Not set")}</div><div class="small">${f?`Last changed: ${f.date} • ${esc(f.size)}`:"No filter change recorded"}</div></div>`}).join(""):`<div class="empty">Add your first apartment/unit.</div>`;
+ $('historyList').innerHTML=db.filters.length?[...db.filters].sort((a,b)=>b.date.localeCompare(a.date)).map(f=>`<div class="item"><div class="row"><b>${esc(unitName(f.unitId))}</b><button class="danger small" onclick="del('filters','${f.id}')">Delete</button></div><div>${f.date} • Filter ${esc(f.size)}</div><div class="small muted">Performed by: ${esc(f.performedBy||"Not entered")} • Next: ${esc(f.nextDate||"Not scheduled")}</div></div>`).join(""):`<div class="empty">No filter changes recorded.</div>`;
+ $('maintenanceList').innerHTML=db.maintenance.length?[...db.maintenance].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<div class="item"><div class="row"><b>${esc(unitName(m.unitId))}</b><button class="danger small" onclick="del('maintenance','${m.id}')">Delete</button></div><div>${esc(m.project)} • ${m.date}</div><div class="small muted">Contractor: ${esc(m.contractor||"Not entered")} • Cost: $${m.cost.toFixed(2)} • Payment: ${esc(m.payment)}</div></div>`).join(""):`<div class="empty">No maintenance records recorded.</div>`;
+}
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+render();
+</script>
+</body></html>
