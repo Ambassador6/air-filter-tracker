@@ -23,3 +23,4 @@ Features:
 The app stores its records locally in the browser on the phone. Clearing the browser's site data can remove records, so a cloud backup/database can be added in the next version.
 
 An APK cannot be compiled in this workspace because the Android SDK/build tools are not installed and this environment cannot download them. The included PWA is nevertheless a real installable Android app experience and is ready to host.
+Deployment refresh
