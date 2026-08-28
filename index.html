@@ -97,6 +97,76 @@ function saveUnit(e){e.preventDefault();db.units.push({id:crypto.randomUUID(),pr
 function saveFilter(e){e.preventDefault();db.filters.push({id:crypto.randomUUID(),unitId:$('filterUnit').value,date:$('filterDate').value,size:$('filterSize').value.trim(),nextDate:$('nextDate').value,performedBy:$('performedBy').value.trim(),created:Date.now()});filterDlg.close();save()}
 function saveMaintenance(e){e.preventDefault();db.maintenance.push({id:crypto.randomUUID(),unitId:$('maintUnit').value,date:$('maintDate').value,project:$('project').value.trim(),contractor:$('contractor').value.trim(),cost:Number($('cost').value||0),payment:$('payment').value,created:Date.now()});maintDlg.close();save()}
 function del(type,id){if(!confirm("Delete this record?"))return;db[type]=db[type].filter(x=>x.id!==id);save()}
+function renderReports(){
+  let box=document.getElementById("maintenanceReports");
+
+  if(!box){
+    box=document.createElement("div");
+    box.id="maintenanceReports";
+    box.className="card";
+    document.getElementById("maintenance").appendChild(box);
+  }
+
+  const money=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n||0);
+
+  const makeRows=(title,data)=>{
+    const rows=Object.entries(data).sort((a,b)=>b[1]-a[1]);
+    return `
+      <div class="item">
+        <div class="row"><b>${title}</b><b>Total</b></div>
+        ${rows.length
+          ? rows.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join("")
+          : `<div class="empty">No maintenance costs recorded.</div>`
+        }
+      </div>`;
+  };
+
+  const mode=window.reportMode||"apartment";
+
+  const apartment={};
+  const month={};
+  const year={};
+  let overall=0;
+
+  db.maintenance.forEach(m=>{
+    const cost=Number(m.cost)||0;
+    const apartmentName=unitName(m.unitId);
+    const monthName=m.date ? m.date.slice(0,7) : "No date";
+    const yearName=m.date ? m.date.slice(0,4) : "No date";
+
+    apartment[apartmentName]=(apartment[apartmentName]||0)+cost;
+    month[monthName]=(month[monthName]||0)+cost;
+    year[yearName]=(year[yearName]||0)+cost;
+    overall+=cost;
+  });
+
+  let report="";
+
+  if(mode==="apartment"){
+    report=makeRows("Apartment / Unit",apartment);
+  }else if(mode==="month"){
+    report=makeRows("Month",month);
+  }else if(mode==="year"){
+    report=makeRows("Year",year);
+  }
+
+  box.innerHTML=`
+    <div class="row">
+      <h2>Maintenance Reports</h2>
+      <span class="badge">TOTAL: ${money(overall)}</span>
+    </div>
+
+    <label>Report By
+      <select onchange="window.reportMode=this.value;renderReports()">
+        <option value="apartment" ${mode==="apartment"?"selected":""}>Apartment</option>
+        <option value="month" ${mode==="month"?"selected":""}>Month</option>
+        <option value="year" ${mode==="year"?"selected":""}>Year</option>
+      </select>
+    </label>
+
+    ${report}
+  `;
+}
 function render(){
  $('unitCount').textContent=db.units.length;
  $('filterCount').textContent=db.filters.length;
@@ -112,5 +182,7 @@ function render(){
 }
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 render();
+  
+renderReports();
 </script>
 </body></html>
